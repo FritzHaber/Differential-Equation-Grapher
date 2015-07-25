@@ -4,10 +4,10 @@ import java.util.function.DoubleBinaryOperator;
  
 public class Integration
 {
-	//the four parameter arrays are for the runge-kutta feldmen 5th order integrator
+	//the four parameter arrays are for the runge-kutta-feldmann 5th order integration math
 	//these are the Cash-Karp values
 	//D is C*, C* is an invalid variable name
-	//all arays have a padding row/column to make the arrays 1-based for readabiliy
+	//all arays have a padding row/column to make the arrays 1-based for readability
 	public static final double [] A = new double[]{0, 0, (1.0/5), (3.0/10), (3.0/5), 1, (7.0/8)};
 	public static final double [][] B = new double [][] {
 															{0, 0, 0, 0, 0}, /*padding to make it 1-based*/
@@ -21,8 +21,8 @@ public class Integration
 	public static final double [] C = new double[]{0, (37.0/378), 0, (250.0/621), (125.0/594), 0, (512.0/1771)};
 	public static final double [] D = new double[]{0, (2825.0/27648), 0, (18575.0/48384), (13525.0/55296), (277.0/14336), (1.0/4)};
 	
-	public final static double DESIRED_ACCURACY = 0.001;
-//	private static double stepSize = 1.0/512;
+	//seems WAY to small, but solves graphical issues
+	public final static double DESIRED_ERROR = Math.pow(10, -20);
 	
 	public static double[] RK4(DoubleBinaryOperator f, double x, double y, double h, int steps)
     {
@@ -53,12 +53,13 @@ public class Integration
     }
     
     //uses the Runge-Kutta-Feldman 5th order integration equations
+    //Uses adaptive stepsizes
     public static double RKF5(DoubleBinaryOperator f ,double x, double y, double h){
+    	
     	double[] k = getKArray(f, x, y, h);
-    	double testError = getError(k);
-    	if(testError < DESIRED_ACCURACY){
-    		
-    	}
+    	double error = getError(k);
+    	h = h * Math.abs(fifthRoot(DESIRED_ERROR / error));
+    	k = getKArray(f, x, y, h);
     	return y + C[1]*k[1] + C[2]*k[2] + C[3]*k[3] + C[4]*k[4] + C[5]*k[5] + C[6]*k[6];
     }
     
@@ -83,13 +84,14 @@ public class Integration
     	return error;
     }
     
-    private static double fastFifthRoot(double x)
+    private static double fifthRoot(double x)
     {
     	return (0.0133812 + x *(0.0413244 + x *(0.0162057 + (0.00124834 + 0.0000144931* x) *x)))/(0.02112 + x *(0.0393412 + x *(0.011045 + (0.000609098 + 4.26539E-6 *x)* x)));
     }
     
     public static PointIterator IntegratorPath(DoubleBinaryOperator f, double x, double y, double h){
     	return new PointIterator(){
+    		double step = h;
     		double newX = x;
     		double newY = y;
 			@Override
@@ -104,8 +106,8 @@ public class Integration
 
 			@Override
 			public boolean advance() {
-				newX += h;
-				newY = RKF5(f, newX, newY, h);
+	    		newX += step;
+	    		newY = RKF5(f, newX, newY, step);
 				return true; //change for invalid advance (on to asymptote)
 			}
     		
