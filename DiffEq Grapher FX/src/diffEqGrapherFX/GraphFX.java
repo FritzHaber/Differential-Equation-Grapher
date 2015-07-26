@@ -12,14 +12,14 @@ import javafx.scene.Group;
 public class GraphFX {
 
 	//private double scale;
-	private double xOffset;
-	private double yOffset;
+//	private double xOffset;
+//	private double yOffset;
 	
 	private double[][] xCoordinates, yCoordinates;
 	
 	public GraphFX(double xOffset, double yOffset, double[][] xCoordinates, double[][] yCoordinates){
-		this.xOffset = xOffset;
-		this.yOffset = yOffset;
+//		this.xOffset = xOffset;
+//		this.yOffset = yOffset;
 		this.xCoordinates = xCoordinates;
 		this.yCoordinates = yCoordinates;
 	}

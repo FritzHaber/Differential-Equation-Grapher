@@ -5,13 +5,16 @@ import java.util.function.DoubleBinaryOperator;
 
 //import javafx.scene.paint.*;
 import javafx.application.Application;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.stage.Stage;
+import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.GridPane;
+import javafx.stage.Stage;
 
 
 public class GraphController extends Application{
@@ -36,6 +39,7 @@ public class GraphController extends Application{
 		root.getChildren().add(canvas);
 		Scene scene = new Scene(root);
 		stage.setScene(scene);
+		//make escape close window
 		stage.addEventFilter(KeyEvent.KEY_PRESSED,e -> {
 			if(e.getCode() == KeyCode.ESCAPE)
 				System.exit(0);

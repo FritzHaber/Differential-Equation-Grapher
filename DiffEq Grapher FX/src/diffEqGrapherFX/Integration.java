@@ -24,7 +24,7 @@ public class Integration{
 	public static final double [] Cstar = new double[]{0, (2825.0/27648), 0, (18575.0/48384), (13525.0/55296), (277.0/14336), (1.0/4)};
 	
 	//seems WAY to small, but solves graphical issues
-	public final static double DESIRED_ERROR = Math.pow(10, -20);
+	public final static double DESIRED_ERROR = Math.pow(10, -14);
 	
 	//@author Rajan Troll
 	public static double[] RK4(DoubleBinaryOperator f, double x, double y, double h, int steps)
@@ -82,6 +82,7 @@ public class Integration{
      * @return an array of the 6 k variables
      */
     public static double[] getKArray(DoubleBinaryOperator f, double x, double y, double h){
+    	//System.out.println(h);
     	double[] k = new double[7];
     	k[1] = h * f.applyAsDouble(x,y);
     	k[2] = h * f.applyAsDouble(x + A[2] * h, y + B[2][1] * k[1]);
