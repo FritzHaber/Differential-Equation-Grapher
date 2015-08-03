@@ -11,7 +11,7 @@ import java.util.function.DoubleBinaryOperator;
  **/
 public class InputParser {
 	//TODO exponents, e^x, constants (e, pi, etc)
-	private static String inputEq = "5^6";
+	private static String inputEq = "(5)^(6)*7";
 	private String processedEq;
 	private static char var1 = 'x';
 	private static char var2 = 'y';
@@ -22,8 +22,7 @@ public class InputParser {
 	}
 	
 	public static void main(String[] args){
-		//parse();
-		parseExponents();
+		parse();
 		System.out.println(inputEq);
 	}
 	
@@ -38,37 +37,63 @@ public class InputParser {
 		stage2Parse();
 		stage3Parse();		
 	}
-
+	//has issues with multiple consecutive parenthesis (2*(3))^(8)
 	//if user input is mathematically correct, the only characters that can border the ^ sign is (, ), or the digits
 	private static void parseExponents() {
 		//assume ^ is not at index 0, or at index length
 		if(inputEq.contains("^")){
 			int i = inputEq.indexOf("^");
-			int firstMarker = i;
+			int firstMarker = i-1;
+
 			if(inputEq.charAt(i-1) == ')'){
-				while(inputEq.charAt(firstMarker) != '('){
+				int parenCount = 0;
+				do{
+					if(inputEq.charAt(firstMarker) == ')'){
+						parenCount++;
+					}
+					else if(inputEq.charAt(firstMarker) == '('){
+						parenCount--;
+					}
 					firstMarker--;
-				}
+					//compensates for if the firstMarker ends at position 0, the compensation below
+					//over compensates in this case
+					if(firstMarker == 0)
+						firstMarker--;
+				}while(parenCount > 0 && firstMarker > 0);
+				//compensates for additional decrement before loop termination if firstMarker does not end at 0
 				firstMarker++;
 			}else{ //assume number in this case?
-				while(Character.isDigit(inputEq.charAt(firstMarker))){
+				while(firstMarker > 0 && Character.isDigit(inputEq.charAt(firstMarker))){
 					firstMarker--;
 				}
+				
 			}
-			int lastMarker = i;
+			
+			
+			int lastMarker = i+1;
 			if(inputEq.charAt(lastMarker) == '('){
-				while(inputEq.charAt(lastMarker) != ')'){
+				int parenCount = 0;
+				do{
+					if(inputEq.charAt(lastMarker) == ')'){
+						parenCount--;
+					}
+					if(inputEq.charAt(lastMarker) == '('){
+						parenCount++;
+					}
 					lastMarker++;
-				}
+				}while(parenCount > 0 && lastMarker < inputEq.length());
+				lastMarker--;
 			}else{ //assume number
-				while(Character.isDigit(inputEq.charAt(lastMarker))){
+				while(lastMarker < inputEq.length() && Character.isDigit(inputEq.charAt(lastMarker))){
 					lastMarker++;
 				}
 			}
-			System.out.println(" i = " + i + "|firstMarker = " + firstMarker + "|lastMarker = " + lastMarker);
-			String temp = inputEq.substring(0, firstMarker-1);
-			temp = temp + "Math.pow(" + inputEq.substring(firstMarker-1, i) + "," + inputEq.substring(i+1, lastMarker) + ")" + inputEq.substring(lastMarker);
-			inputEq = temp;
+			
+			String nonExpFirst = inputEq.substring(0,firstMarker);
+			String nonExpLast = inputEq.substring(lastMarker, inputEq.length());
+			String term = inputEq.substring(firstMarker, i);
+			String power = inputEq.substring(i+1, lastMarker);
+			inputEq = nonExpFirst + "Math.pow(" + term + ","  + power + ")" + nonExpLast;
 		}
 		
 	}
