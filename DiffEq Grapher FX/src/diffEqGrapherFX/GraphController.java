@@ -5,7 +5,6 @@ import java.util.function.DoubleBinaryOperator;
 
 //import javafx.scene.paint.*;
 import javafx.application.Application;
-import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -35,9 +34,13 @@ public class GraphController extends Application{
 	
 	@Override
 	public void start(Stage stage) throws Exception {
+		GridPane grid = new GridPane();
+		TextField tf = new TextField(); //gets equation in;
 		Group root = new Group();
 		root.getChildren().add(canvas);
-		Scene scene = new Scene(root);
+		Scene scene = new Scene(grid, 1000, 1000);
+		grid.add(tf, 0, 0);
+		grid.add(canvas, 0, 1);
 		stage.setScene(scene);
 		//make escape close window
 		stage.addEventFilter(KeyEvent.KEY_PRESSED,e -> {
