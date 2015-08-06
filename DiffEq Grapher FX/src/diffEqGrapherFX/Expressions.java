@@ -28,7 +28,7 @@ public class Expressions
 	{
 		expression = javify(expression);
 		File temp;
-		temp = new File("diffEqGrapherFX/input/Expression.java");
+		temp = new File("src/input/Expression.java");
 		
 		temp.mkdirs();
 		temp.delete();

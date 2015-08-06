@@ -12,7 +12,7 @@ import javafx.scene.Group;
 public class GraphFX {
 
 	//private double scale;
-//	private double xOffset;
+//	private double xOffset = -100;
 //	private double yOffset;
 	
 	private double[][] xCoordinates, yCoordinates;
@@ -33,6 +33,12 @@ public class GraphFX {
 		for(int i = 0; i < xCoordinates.length; i++){
 			double[] xc = xCoordinates[i];
 			double[] yc = yCoordinates[i];
+//			for(Double d : xc){
+//				d += xOffset;
+//			}
+//			for(Double d : yc){
+//				d += yOffset;
+//			}
 			g.strokePolyline(xc, yc, xc.length);
 		}
 	}

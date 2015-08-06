@@ -8,7 +8,8 @@ package diffEqGrapherFX;
  * @author Hank O'Brien
  **/
 public class InputParser {
-	//TODO exponents, e^x, constants (e, pi, etc)
+	//TODO: exponents, e^x, constants (e, pi, etc)
+	//TODO: logs
 //	private static String inputEq = "(5)^(6)*7";
 //	private String processedEq;
 	private static char var1 = 'x';

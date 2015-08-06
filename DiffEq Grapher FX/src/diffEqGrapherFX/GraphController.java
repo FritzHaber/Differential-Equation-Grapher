@@ -5,14 +5,21 @@ import java.util.function.DoubleBinaryOperator;
 
 //import javafx.scene.paint.*;
 import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 
@@ -25,8 +32,10 @@ public class GraphController extends Application{
 	public final int YMAX = 25, YMIN = -YMAX;
 	public final int NUM_STEPS = 100;
 	public final double STEP_LENGTH = 1.0/256;
+	public final String SAMPLE_EQ = "(x^4 + 6x^2 + x + 6) / (2y^4 + 4y^3 + 10)";
 	private DoubleBinaryOperator f = (x,y) -> (x*x*x*x + 6*x*x + x + 6) / (4*y*y*y + 2*y*y*y*y +10);
-	private Canvas canvas = new Canvas(SCREEN_WIDTH,SCREEN_HEIGHT);
+	public final int BORDER_WIDTH = 25;
+	private Canvas canvas = new Canvas(SCREEN_WIDTH - 2*BORDER_WIDTH, SCREEN_HEIGHT - 4*BORDER_WIDTH);
 	
 	public static void main(String[] args){
 		launch(args);
@@ -35,12 +44,40 @@ public class GraphController extends Application{
 	@Override
 	public void start(Stage stage) throws Exception {
 		GridPane grid = new GridPane();
+		grid.setVgap(10);
+		grid.getColumnConstraints().add(new ColumnConstraints(SCREEN_WIDTH - 100));
+		grid.getColumnConstraints().add(new ColumnConstraints(100));
+		//grid.setBorder(null);
+		
 		TextField tf = new TextField(); //gets equation in;
+		tf.setPromptText("Enter the differential equation");
+		
+		Label equation = new Label(SAMPLE_EQ);
+		VBox v = new VBox(equation);
+		v.setStyle("-fx-background-color: rgba(0, 0, 0, 0);");
+		grid.add(v, 0, 2);
+		
+		Button submit = new Button("Submit");
+		submit.setMinWidth(30);
+		grid.add(submit, 1, 0);
+		submit.setOnAction(new EventHandler<ActionEvent>() {
+
+		      @Override
+		      public void handle(ActionEvent event) {
+		        equation.setText(tf.getText());
+		      }
+		    });
+		
 		Group root = new Group();
 		root.getChildren().add(canvas);
+		
 		Scene scene = new Scene(grid, 1000, 1000);
+		scene.getStylesheets().add("Style.css");
+		
 		grid.add(tf, 0, 0);
 		grid.add(canvas, 0, 1);
+		grid.setPadding(new Insets(25,25,25,25));
+		
 		stage.setScene(scene);
 		//make escape close window
 		stage.addEventFilter(KeyEvent.KEY_PRESSED,e -> {
@@ -49,6 +86,7 @@ public class GraphController extends Application{
 		});
 		stage.setFullScreen(true);
 		stage.setFullScreenExitHint("");
+		
 		GraphicsContext g = canvas.getGraphicsContext2D();
 		//puts 0,0 in center of display
 		g.scale(1,-1);
@@ -56,6 +94,8 @@ public class GraphController extends Application{
 		g.translate(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 		g.scale(50,50);
 		g.setLineWidth(0.05);
+		//deals with padding and such
+		g.translate(-0.5, 0);
 		
 		double[][] x = new double[(YMAX-YMIN+1) * 2][];
 		double[][] y = new double[(YMAX-YMIN+1) * 2][];
