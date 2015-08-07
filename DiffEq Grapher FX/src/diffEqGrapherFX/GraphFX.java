@@ -1,13 +1,7 @@
 package diffEqGrapherFX;
 
-//import javafx.scene.*;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-//import javafx.scene.shape.Line;
-import javafx.scene.Group;
-//import javafx.scene.Scene;
-//import javafx.application.*;
-//import javafx.stage.*;
 
 public class GraphFX {
 
@@ -24,12 +18,13 @@ public class GraphFX {
 		this.yCoordinates = yCoordinates;
 	}
 	
-	public void draw(GraphicsContext g, Group root){
+	public void draw(GraphicsContext g){
 		g.setStroke(Color.BLACK);
 		g.strokeLine(0,-10000, 0, 10000);
 		g.strokeLine(-10000,0, 10000, 0);
 		
 		g.setStroke(Color.RED);
+		//System.out.println(xCoordinates.length);
 		for(int i = 0; i < xCoordinates.length; i++){
 			double[] xc = xCoordinates[i];
 			double[] yc = yCoordinates[i];

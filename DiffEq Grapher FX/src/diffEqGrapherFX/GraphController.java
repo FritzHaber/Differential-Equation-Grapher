@@ -15,11 +15,14 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 
@@ -35,7 +38,7 @@ public class GraphController extends Application{
 	public final String SAMPLE_EQ = "(x^4 + 6x^2 + x + 6) / (2y^4 + 4y^3 + 10)";
 	private DoubleBinaryOperator f = (x,y) -> (x*x*x*x + 6*x*x + x + 6) / (4*y*y*y + 2*y*y*y*y +10);
 	public final int BORDER_WIDTH = 25;
-	private Canvas canvas = new Canvas(SCREEN_WIDTH - 2*BORDER_WIDTH, SCREEN_HEIGHT - 4*BORDER_WIDTH);
+	private Canvas canvas = new Canvas(SCREEN_WIDTH - 2*BORDER_WIDTH, SCREEN_HEIGHT - 9*BORDER_WIDTH);
 	
 	public static void main(String[] args){
 		launch(args);
@@ -43,49 +46,8 @@ public class GraphController extends Application{
 	
 	@Override
 	public void start(Stage stage) throws Exception {
-		GridPane grid = new GridPane();
-		grid.setVgap(10);
-		grid.getColumnConstraints().add(new ColumnConstraints(SCREEN_WIDTH - 100));
-		grid.getColumnConstraints().add(new ColumnConstraints(100));
-		//grid.setBorder(null);
-		
-		TextField tf = new TextField(); //gets equation in;
-		tf.setPromptText("Enter the differential equation");
-		
-		Label equation = new Label(SAMPLE_EQ);
-		VBox v = new VBox(equation);
-		v.setStyle("-fx-background-color: rgba(0, 0, 0, 0);");
-		grid.add(v, 0, 2);
-		
-		Button submit = new Button("Submit");
-		submit.setMinWidth(30);
-		grid.add(submit, 1, 0);
-		submit.setOnAction(new EventHandler<ActionEvent>() {
-
-		      @Override
-		      public void handle(ActionEvent event) {
-		        equation.setText(tf.getText());
-		      }
-		    });
-		
 		Group root = new Group();
 		root.getChildren().add(canvas);
-		
-		Scene scene = new Scene(grid, 1000, 1000);
-		scene.getStylesheets().add("Style.css");
-		
-		grid.add(tf, 0, 0);
-		grid.add(canvas, 0, 1);
-		grid.setPadding(new Insets(25,25,25,25));
-		
-		stage.setScene(scene);
-		//make escape close window
-		stage.addEventFilter(KeyEvent.KEY_PRESSED,e -> {
-			if(e.getCode() == KeyCode.ESCAPE)
-				System.exit(0);
-		});
-		stage.setFullScreen(true);
-		stage.setFullScreenExitHint("");
 		
 		GraphicsContext g = canvas.getGraphicsContext2D();
 		//puts 0,0 in center of display
@@ -95,8 +57,81 @@ public class GraphController extends Application{
 		g.scale(50,50);
 		g.setLineWidth(0.05);
 		//deals with padding and such
-		g.translate(-0.5, 0);
+		g.translate(-0.5, 2);
 		
+		GridPane grid = new GridPane();
+		grid.setVgap(10);
+		grid.getColumnConstraints().add(new ColumnConstraints(SCREEN_WIDTH - 100));
+		grid.getColumnConstraints().add(new ColumnConstraints(100));
+		//grid.setBorder(null);
+		
+		
+		TextField tf = new TextField(); //gets equation in;
+		tf.setPromptText("Enter the differential equation");
+		tf.setFocusTraversable(false); //makes it so its not auto-selected at application start (hides the suggestion text)
+		grid.add(tf, 0, 0);
+		
+		Label equationLabel = new Label(SAMPLE_EQ);
+		VBox v = new VBox(equationLabel);
+		v.setStyle("-fx-background-color: rgba(0, 0, 0, 0);");
+		grid.add(v, 0, 2);
+		
+		Button submit = new Button("Submit");
+		submit.setMinWidth(30);
+		submit.setFocusTraversable(false);
+		grid.add(submit, 1, 0);
+		submit.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				equationLabel.setText(tf.getText());
+				f = Expressions.compile(tf.getText());
+				g.clearRect(-100000,-100000,200000,200000); //intended to clear the graph
+				draw(g);
+			}
+		});
+		
+		Button settings = new Button();
+		Image image = new Image(getClass().getResourceAsStream("gear.png"));
+		settings.setGraphic(new ImageView(image));
+		settings.setFocusTraversable(false);
+		grid.add(settings, 1, 2);
+		settings.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {//TODO: add preferred range of where to look at graph
+				Stage temp = new Stage();
+				temp.initModality(Modality.APPLICATION_MODAL);
+				temp.show();
+			}
+		});
+		
+
+		
+		Scene scene = new Scene(grid, SCREEN_WIDTH, SCREEN_HEIGHT);
+		scene.getStylesheets().add("Style.css");
+		
+
+		grid.add(canvas, 0, 1);
+		grid.setPadding(new Insets(25,25,25,25));
+		
+		stage.setScene(scene);
+		//make escape close window
+		stage.addEventFilter(KeyEvent.KEY_PRESSED,e -> {
+			if(e.getCode() == KeyCode.ESCAPE)
+				System.exit(0);
+		});
+//		stage.setFullScreen(true);
+		stage.setFullScreenExitHint("");
+		
+		
+		
+		draw(g);
+		stage.show();
+
+
+	}
+	public void draw(GraphicsContext g){
 		double[][] x = new double[(YMAX-YMIN+1) * 2][];
 		double[][] y = new double[(YMAX-YMIN+1) * 2][];
 
@@ -106,11 +141,9 @@ public class GraphController extends Application{
 			}
 
 		GraphFX graph = new GraphFX(0,0,x, y);
-		graph.draw(g, root);
-		stage.show();
-
-
+		graph.draw(g);
 	}
+	
 	public void producePoints(double startX, double startY, double[][] x, double[][] y, int curveIndex, double stepLength){
 		x[curveIndex] = new double[4096];
 		y[curveIndex] = new double[4096];
