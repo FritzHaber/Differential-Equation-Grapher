@@ -27,6 +27,7 @@ public class Expressions
 	public static DoubleBinaryOperator compile(String expression)
 	{
 		expression = javify(expression);
+		System.out.println(expression);
 		File temp;
 		temp = new File("src/input/Expression.java");
 		
@@ -45,10 +46,10 @@ public class Expressions
 			out.println("import static java.lang.Math.*;");
 			out.println("public class Expression implements DoubleBinaryOperator");
 			out.println("{");
-			out.println("\tpublic double ln(double x)");
-			out.println("\t{");
-			out.println("\t\treturn log(x);");
-			out.println("\t}");
+//			out.println("\tpublic double ln(double x)");
+//			out.println("\t{");
+//			out.println("\t\treturn log(x);");
+//			out.println("\t}");
 			out.println("\tpublic double applyAsDouble(double x, double y)");
 			out.println("\t{");
 			out.printf("\t\treturn %s;\n", expression);

@@ -68,7 +68,12 @@ public class Integration{
     	
     	double[] k = getKArray(f, x, y, h);
     	double error = getError(k);
-    	h = h * Math.abs(fifthRoot(DESIRED_ERROR / error));
+    	if(error != 0){ //assuming function is not exact
+    		h = h * Math.abs(fifthRoot(DESIRED_ERROR / error));
+    	}
+    	else{
+    		h *= 4; //attempt to speed up by increasing h when function is exact
+    	}
     	k = getKArray(f, x, y, h);
     	return y + C[1]*k[1] + C[2]*k[2] + C[3]*k[3] + C[4]*k[4] + C[5]*k[5] + C[6]*k[6];
     }
@@ -82,7 +87,6 @@ public class Integration{
      * @return an array of the 6 k variables
      */
     public static double[] getKArray(DoubleBinaryOperator f, double x, double y, double h){
-    	//System.out.println(h);
     	double[] k = new double[7];
     	k[1] = h * f.applyAsDouble(x,y);
     	k[2] = h * f.applyAsDouble(x + A[2] * h, y + B[2][1] * k[1]);
@@ -105,7 +109,7 @@ public class Integration{
     	for(int i = 1; i <= 6; i++){
     		error += (C[i] - Cstar[i]) * k[i];
     	}
-    	return error;
+    	return Math.abs(error);
     }
     
     /**
@@ -120,6 +124,7 @@ public class Integration{
     }
     
     public static PointIterator IntegratorPath(DoubleBinaryOperator f, double x, double y, double h){
+    	
     	return new PointIterator(){
     		double step = h;
     		double newX = x;
@@ -137,7 +142,7 @@ public class Integration{
 			@Override
 			public boolean advance() {
 	    		newX += step;
-	    		newY = RKF5(f, newX, newY, step);
+	    		newY = RKF5(f, newX, newY, step); //RKF5 is more condensed vs. RK4
 				return true; //change for invalid advance (on to asymptote)
 			}
     		

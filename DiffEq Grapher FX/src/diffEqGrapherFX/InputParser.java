@@ -20,6 +20,7 @@ public class InputParser {
 		temp = parseConstants(temp);
 		temp = parseTrig(temp);
 		temp = parseLogs(temp);
+		temp = parseAbs(temp);
 		do{
 			natEq = temp;
 			temp = parseImplicitMultiplication(temp);
@@ -29,6 +30,11 @@ public class InputParser {
 		return temp;
 	}
 	
+	private static String parseAbs(String natEq) {
+		natEq = natEq.replace("abs(", "Math.abs(");
+		return natEq;
+	}
+
 	private static String parseLogs(String natEq) {
 		natEq = natEq.replace("log(", "Math.log10(");
 		natEq = natEq.replace("ln(", "Math.log(");
@@ -53,7 +59,7 @@ public class InputParser {
 	private static String parseExponents(String natEq) {
 		//assume ^ is not at index 0, or at index length
 		if(natEq.contains("^")){
-			int i = indexOfFromBack(natEq, '^');
+			int i = natEq.lastIndexOf("^");
 			
 			//term below power
 			int firstMarker = i-1;
@@ -126,14 +132,6 @@ public class InputParser {
 		return natEq;
 	}
 
-	
-	private static int indexOfFromBack(String s, char c){
-		for(int i = s.length() - 1; i >= 0; i--){
-			if(s.charAt(i) == c)
-				return i;
-		}
-		return -1;
-	}
 	
 	//need to have the decimal case, because decimals are always part of a number
 	private static boolean isDigit(char c) {
