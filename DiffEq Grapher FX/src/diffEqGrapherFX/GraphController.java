@@ -1,6 +1,6 @@
 package diffEqGrapherFX;
 
-import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.DoubleBinaryOperator;
 
@@ -144,46 +144,39 @@ public class GraphController extends Application{
 
 	}
 	public void draw(GraphicsContext g, DoubleBinaryOperator f){
-		g.clearRect(-100000,-100000,200000,200000); //intended to clear the graph
-		double[][] x = new double[(int)((YMAX-YMIN+1) * 2)][];
-		double[][] y = new double[(int)((YMAX-YMIN+1) * 2)][];
-//		PointCalculator p;
-		for(int i = 0; i < x.length; i+=2){
-//			p = new PointCalculator(XMAX, XMIN, 0, (i/2+YMIN)/2, x, y, i, STEP_LENGTH, f);
-//			p.start();
-//			x = p.getX();
-//			y = p.getY();
-//			System.out.println(Arrays.toString(x[0]));
-			producePoints(0, (i/2+YMIN)/2, x, y, i, STEP_LENGTH, f);
-			producePoints(0, (i/2+YMIN)/2, x, y, i + 1, -STEP_LENGTH, f);
+		int curveNum = (int)((YMAX-YMIN+1));
+		g.clearRect(-100000,-100000,200000,200000); //to clear the graph
+		
+		ArrayList<Curve> lines = new ArrayList<Curve>(2 * curveNum); //for both positive x and negative x
+		//8192 is a prediction for the length, array can be extended later
+		for(int i = 0; i < 2 * curveNum; i+=2){
+			lines.add(computeLine(0, (i/2+YMIN)/2, STEP_LENGTH, f));
+			lines.add(computeLine(0, (i/2+YMIN)/2, -STEP_LENGTH, f));
 		}
-		System.out.println(f.applyAsDouble(1, 0));
-		System.out.println(f.applyAsDouble(0, 2));
-//		System.out.println(Arrays.toString(y[0]));
-//		System.out.println("---------------");
-		GraphFX graph = new GraphFX(0,0,x, y);
+		GraphFX graph = new GraphFX(0,0,lines);
 		graph.draw(g);
 	}
 	
-	//values of x and y are updated through references
-	public void producePoints(double startX, double startY, double[][] x, double[][] y, int curveIndex, double stepLength, DoubleBinaryOperator f){
-		x[curveIndex] = new double[4096];
-		y[curveIndex] = new double[4096];
+	public Curve computeLine(double startX, double startY, double stepLength, DoubleBinaryOperator f){
+		double[] x = new double[8192];
+		double[] y = new double[8192];
 		PointIterator p = Integration.IntegratorPath(f, startX, startY, stepLength);
 		int index = 0;
 		while(p.getX() <= XMAX && p.getX() >= XMIN){
-			x[curveIndex][index] = p.getX();
-			y[curveIndex][index] = p.getY();
+			x[index] = p.getX();
+			y[index] = p.getY();
 			p.advance();
 			index++;
 			//dynamic resizing
-			if(index == x[curveIndex].length){
-				x[curveIndex] = Arrays.copyOf(x[curveIndex], x[curveIndex].length * 2);
-				y[curveIndex] = Arrays.copyOf(y[curveIndex], y[curveIndex].length * 2);
+			if(index == x.length){
+				x = Arrays.copyOf(x, x.length * 2);
+				y = Arrays.copyOf(y, y.length * 2);
 			}
 		}
-		x[curveIndex] = Arrays.copyOf(x[curveIndex], index);
-		y[curveIndex] = Arrays.copyOf(y[curveIndex], index);
+		//strips 0s from end, TODO: parallelize
+		x = Arrays.copyOf(x, index);
+		y = Arrays.copyOf(y, index);
+		return new Curve(x,y);
 	}
-
+	
 }
