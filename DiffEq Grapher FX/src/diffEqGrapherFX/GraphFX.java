@@ -12,12 +12,14 @@ public class GraphFX {
 	private double yOffset;
 	
 	private ArrayList<Curve> lines;
+	private Color defaultColor;
 	
 	
-	public GraphFX(double xOffset, double yOffset, ArrayList<Curve> lines) {
+	public GraphFX(double xOffset, double yOffset, ArrayList<Curve> lines, Color defaultColor) {
 		this.lines = lines;
 		this.xOffset = xOffset;
 		this.yOffset = yOffset;
+		this.defaultColor = defaultColor;
 	}
 
 	public void draw(GraphicsContext g){
@@ -27,10 +29,19 @@ public class GraphFX {
 		g.strokeLine(-10000,0 + yOffset, 10000, 0 + yOffset);
 		
 		//curves
-		g.setStroke(Color.RED);
+		g.setStroke(defaultColor);
 		for(int i = 0; i < lines.size(); i++){
 			g.strokePolyline(lines.get(i).getxVals(), lines.get(i).getyVals(), lines.get(i).getxVals().length);
 		}
+	}
+	
+	public void drawLine(GraphicsContext g, Curve line, Color lineColor){
+		g.setStroke(lineColor);
+		g.strokePolyline(line.getxVals(), line.getyVals(), line.getxVals().length);
+	}
+
+	public void setLines(ArrayList<Curve> lines) {
+		this.lines = lines;
 	}
 	
 	
