@@ -30,17 +30,18 @@ public class GraphController extends Application{
 
 	public final int SCREEN_WIDTH = 1440;
 	public final int SCREEN_HEIGHT = 900;
-	public int XMAX = 20;
+	public final int XMAX = 20;
 	public final int XMIN = -XMAX;
-	public int YMAX = 25;
+	public final int YMAX = 25;
 	public final int YMIN = -YMAX;
 	public final int NUM_STEPS = 100;
-	public final double STEP_LENGTH = 1.0/256;
+	public final double STEP_LENGTH = 1.0/128;
 	public final String SAMPLE_EQ = "(x^4 + 6x^2 + x + 6) / (2y^4 + 4y^3 + 10)";
-	private volatile DoubleBinaryOperator f = (x,y) -> (x*x*x*x + 6*x*x + x + 6) / (4*y*y*y + 2*y*y*y*y +10);
 	public final int BORDER_WIDTH = 25;
 	public final Color DEFAULT_COLOR = Color.RED;
 	public final Color USER_COLOR = Color.BLUE;
+	
+	private volatile DoubleBinaryOperator f = (x,y) -> (x*x*x*x + 6*x*x + x + 6) / (4*y*y*y + 2*y*y*y*y +10);
 	
 	private Canvas canvas = new Canvas(SCREEN_WIDTH - 2*BORDER_WIDTH, SCREEN_HEIGHT - 9*BORDER_WIDTH);
 	private ArrayList<Curve> lines;
@@ -80,14 +81,12 @@ public class GraphController extends Application{
 		
 		
 		TextField tf = new TextField(); //gets equation in;
-		tf.setPromptText("Enter the differential equation");
+		tf.setPromptText("dy/dx = ");
 		tf.setFocusTraversable(false); //makes it so its not auto-selected at application start (which hides the suggestion text)
 		grid.add(tf, 0, 0,2,1);
 		
 		Label equationLabel = new Label(SAMPLE_EQ);
-		VBox v = new VBox(equationLabel);
-		v.setStyle("-fx-background-color: rgba(0, 0, 0, 0);");
-		grid.add(v, 0, 2);
+		grid.add(equationLabel, 0, 2);
 		
 		Button submit = new Button("Submit");
 		submit.setMinWidth(30);
@@ -138,8 +137,8 @@ public class GraphController extends Application{
 			Button add = new Button("Add");
 			add.setOnAction(d ->{
 				addLinePrompt.close();
-				Curve c1 = computeOneWayLine(Integer.parseInt(xField.getText()), Integer.parseInt(yField.getText()), STEP_LENGTH, f);
-				Curve c2 = computeOneWayLine(Integer.parseInt(xField.getText()), Integer.parseInt(yField.getText()), -STEP_LENGTH, f);
+				Curve c1 = computeOneWayLine(Double.parseDouble(xField.getText()), Double.parseDouble(yField.getText()), STEP_LENGTH, f);
+				Curve c2 = computeOneWayLine(Double.parseDouble(xField.getText()), Double.parseDouble(yField.getText()), -STEP_LENGTH, f);
 				lines.add(c1);
 				lines.add(c2);
 				graph.drawLine(g, c1, USER_COLOR);

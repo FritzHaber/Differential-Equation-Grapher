@@ -31,7 +31,7 @@ public class GraphFX {
 		//curves
 		g.setStroke(defaultColor);
 		for(int i = 0; i < lines.size(); i++){
-			g.strokePolyline(lines.get(i).getxVals(), lines.get(i).getyVals(), lines.get(i).getxVals().length);
+			drawLine(g, lines.get(i), defaultColor);
 		}
 	}
 	
