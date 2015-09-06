@@ -23,6 +23,7 @@ public class GraphFX {
 	}
 
 	public void draw(GraphicsContext g){
+		g.clearRect(-100000,-100000,200000,200000); //to clear the graph
 		//axis
 		g.setStroke(Color.BLACK);
 		g.strokeLine(0 + xOffset,-10000, 0+xOffset, 10000);
@@ -40,8 +41,8 @@ public class GraphFX {
 		g.strokePolyline(line.getxVals(), line.getyVals(), line.getxVals().length);
 	}
 
-	public void setLines(ArrayList<Curve> lines) {
-		this.lines = lines;
+	public void setLines(ArrayList<Curve> lines2) {
+		this.lines = lines2;
 	}
 	
 	

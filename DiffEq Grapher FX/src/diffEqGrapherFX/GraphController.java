@@ -2,9 +2,17 @@ package diffEqGrapherFX;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.function.DoubleBinaryOperator;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
+
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
@@ -20,7 +28,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -40,6 +47,8 @@ public class GraphController extends Application{
 	public final int BORDER_WIDTH = 25;
 	public final Color DEFAULT_COLOR = Color.RED;
 	public final Color USER_COLOR = Color.BLUE;
+	
+	static ListeningExecutorService parallelizer = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
 	
 	private volatile DoubleBinaryOperator f = (x,y) -> (x*x*x*x + 6*x*x + x + 6) / (4*y*y*y + 2*y*y*y*y +10);
 	
@@ -73,10 +82,9 @@ public class GraphController extends Application{
 
 		//grid.setBorder(null);
 		
-		lines = getLines(g, f);
+
 		GraphFX graph = new GraphFX(0,0,lines,DEFAULT_COLOR);
-		graph.draw(g);
-		
+		lines = getLines(g, f, graph);
 		
 		
 		
@@ -93,13 +101,27 @@ public class GraphController extends Application{
 		submit.setFocusTraversable(false);
 		grid.add(submit, 2, 0);
 		submit.setOnAction(e -> {
-				equationLabel.setText(tf.getText());
-//				ExpressionCompiler ec = new ExpressionCompiler(tf.getText());
-//				f = ec.getDBO();
+				final String newEq = tf.getText();
+				equationLabel.setText(newEq);
+				
+//				ListenableFuture<DoubleBinaryOperator> newDBO = parallelizer.submit(()->{
+//					return Expressions.compile(newEq);
+//				});
+//				newDBO.addListener(()->{
+//					try {
+//						f = newDBO.get();
+//					} catch (Exception e1) {}
+//					lines = getLines(g, f);
+//					graph.setLines(lines);
+//				}, parallelizer);
+				ExpressionCompiler ec = new ExpressionCompiler(tf.getText());
+				f = ec.getDBO();
 				f = Expressions.compile(tf.getText());
-				lines = getLines(g, f);
-				graph.setLines(lines);
-				graph.draw(g);
+				lines = getLines(g, f, graph);
+//				graph.setLines(lines);
+//				graph.draw(g);
+				
+
 			});
 		
 		Button settings = new Button();
@@ -159,7 +181,7 @@ public class GraphController extends Application{
 		grid.add(addLine, 1, 2);
 		
 		Scene scene = new Scene(grid, SCREEN_WIDTH, SCREEN_HEIGHT);
-		scene.getStylesheets().add("Style.css");
+//		scene.getStylesheets().add("Style.css");
 		
 		
 		grid.add(canvas, 0, 1);
@@ -182,19 +204,48 @@ public class GraphController extends Application{
 
 
 	}
-	public ArrayList<Curve> getLines(GraphicsContext g, DoubleBinaryOperator f){
+	public ArrayList<Curve> getLines(GraphicsContext g, DoubleBinaryOperator f, GraphFX graph){
 		int curveNum = (int)((YMAX-YMIN+1));
-		g.clearRect(-100000,-100000,200000,200000); //to clear the graph
 		
+		List<ListenableFuture<Curve>> lineFutures = new ArrayList<ListenableFuture<Curve>>();
 		lines = new ArrayList<Curve>(curveNum); //for both positive x and negative x
 		//8192 is a prediction for the length, array can be extended later
 		for(int i = 0; i < 2 * curveNum; i+=2){
-			lines.add(computeOneWayLine(0, (i/2+YMIN)/2, STEP_LENGTH, f));
-			lines.add(computeOneWayLine(0, (i/2+YMIN)/2, -STEP_LENGTH, f));
+			final int index = i;
+			ListenableFuture<Curve> forwardTemp = parallelizer.submit(()->{
+				return computeOneWayLine(0, (index/2+YMIN)/2, STEP_LENGTH, f);
+			});
+			ListenableFuture<Curve> backTemp = parallelizer.submit(()->{
+				return computeOneWayLine(0, (index/2+YMIN)/2, -STEP_LENGTH, f);
+			});
+//			forwardTemp.addListener(()->{
+//				try {
+//					lines.add(forwardTemp.get());
+//				} catch (Exception e1) {};
+//			}, parallelizer);
+//			//when the line is computed, listener fires, then the lines array is updated
+//			backTemp.addListener(()->{
+//				try {
+//					lines.add(backTemp.get());
+//				} catch (Exception e1) {};
+//			}, parallelizer);
+			lineFutures.add(forwardTemp);
+			lineFutures.add(backTemp);
+//			lines.add(computeOneWayLine(0, (i/2+YMIN)/2, STEP_LENGTH, f));
+//			lines.add(computeOneWayLine(0, (i/2+YMIN)/2, -STEP_LENGTH, f));
 		}
+		ListenableFuture<List<Curve>> lineListFuture = Futures.allAsList(lineFutures);
+		lineListFuture.addListener(()->{
+			try {
+				lines = new ArrayList<Curve>(lineListFuture.get());
+			} catch (Exception e) {
+				throw new RuntimeException(); 
+			}
+			graph.setLines(lines);
+			graph.draw(g);
+		}, Platform::runLater);
 		return lines;
 	}
-	
 
 	public Curve computeOneWayLine(double startX, double startY, double stepLength, DoubleBinaryOperator f){
 		double[] x = new double[8192];
@@ -212,7 +263,6 @@ public class GraphController extends Application{
 				y = Arrays.copyOf(y, y.length * 2);
 			}
 		}
-		//strips 0s from end, TODO: parallelize
 		x = Arrays.copyOf(x, index);
 		y = Arrays.copyOf(y, index);
 		return new Curve(x,y);

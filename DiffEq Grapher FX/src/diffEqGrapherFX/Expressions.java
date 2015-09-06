@@ -43,7 +43,7 @@ public class Expressions
 		{
 			out.println("package input;");
 			out.println("import java.util.function.DoubleBinaryOperator;");
-			out.println("import static java.lang.Math.*;");
+//			out.println("import static java.lang.Math.*;");
 			out.println("public class Expression implements DoubleBinaryOperator");
 			out.println("{");
 //			out.println("\tpublic double ln(double x)");
