@@ -6,7 +6,7 @@ import java.net.URLStreamHandlerFactory;
  
 public class ExpressionLoader extends URLClassLoader
 {
- 
+        private String name;
         public ExpressionLoader(URL[] urls)
         {
                 super(urls);
@@ -24,6 +24,7 @@ public class ExpressionLoader extends URLClassLoader
        
         public Class<?> loadClass(String name) throws ClassNotFoundException
         {
+                if(name.equals(this.name)) return super.loadClass(name);
                 switch(name)
                 {
                 case "java.lang.Object":
@@ -34,5 +35,10 @@ public class ExpressionLoader extends URLClassLoader
                 return super.loadClass(name);
                 default: throw new SecurityException(name + "is not allowed in expressions");
                 }
+        }
+ 
+        public void setName(String string)
+        {
+                this.name = string;
         }
 }

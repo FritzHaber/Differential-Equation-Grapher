@@ -3,13 +3,10 @@ package diffEqGrapherFX;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.function.DoubleBinaryOperator;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -26,11 +23,14 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import util.Util;
 
 
 public class GraphController extends Application{
@@ -48,7 +48,7 @@ public class GraphController extends Application{
 	public final Color DEFAULT_COLOR = Color.RED;
 	public final Color USER_COLOR = Color.BLUE;
 	
-	static ListeningExecutorService parallelizer = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
+//	static ListeningExecutorService compute = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
 	
 	private volatile DoubleBinaryOperator f = (x,y) -> (x*x*x*x + 6*x*x + x + 6) / (4*y*y*y + 2*y*y*y*y +10);
 	
@@ -83,8 +83,8 @@ public class GraphController extends Application{
 		//grid.setBorder(null);
 		
 
-		GraphFX graph = new GraphFX(0,0,lines,DEFAULT_COLOR);
-		lines = getLines(g, f, graph);
+		GraphFX graph = new GraphFX(0,0,lines,DEFAULT_COLOR,g);
+		drawLines(g, f, graph);
 		
 		
 		
@@ -104,23 +104,17 @@ public class GraphController extends Application{
 				final String newEq = tf.getText();
 				equationLabel.setText(newEq);
 				
-//				ListenableFuture<DoubleBinaryOperator> newDBO = parallelizer.submit(()->{
-//					return Expressions.compile(newEq);
-//				});
-//				newDBO.addListener(()->{
-//					try {
-//						f = newDBO.get();
-//					} catch (Exception e1) {}
-//					lines = getLines(g, f);
-//					graph.setLines(lines);
-//				}, parallelizer);
-				ExpressionCompiler ec = new ExpressionCompiler(tf.getText());
-				f = ec.getDBO();
-				f = Expressions.compile(tf.getText());
-				lines = getLines(g, f, graph);
-//				graph.setLines(lines);
-//				graph.draw(g);
-				
+				ListenableFuture<DoubleBinaryOperator> newDBO = Util.exec.submit(()->{
+					return Expressions.compile(newEq);
+				});
+				newDBO.addListener(()->{
+					try {
+						System.out.println(f.hashCode());
+						f = newDBO.get();
+						System.out.println(f.hashCode());
+					} catch (Exception e1) {}
+					drawLines(g, f, graph);
+				}, Util.exec);				
 
 			});
 		
@@ -161,10 +155,10 @@ public class GraphController extends Application{
 				addLinePrompt.close();
 				Curve c1 = computeOneWayLine(Double.parseDouble(xField.getText()), Double.parseDouble(yField.getText()), STEP_LENGTH, f);
 				Curve c2 = computeOneWayLine(Double.parseDouble(xField.getText()), Double.parseDouble(yField.getText()), -STEP_LENGTH, f);
-				lines.add(c1);
-				lines.add(c2);
-				graph.drawLine(g, c1, USER_COLOR);
-				graph.drawLine(g, c2, USER_COLOR);
+				graph.addCurve(c1);
+				graph.addCurve(c2);
+				graph.drawLine(c1, USER_COLOR);
+				graph.drawLine(c2, USER_COLOR);
 				});
 			
 			
@@ -198,58 +192,50 @@ public class GraphController extends Application{
 		
 		
 		
-
+		canvas.addEventFilter(ScrollEvent.SCROLL, e ->{
+			graph.zoom(Math.exp(e.getDeltaY()/100));
+		});
+		
+		canvas.addEventFilter(MouseEvent.MOUSE_DRAGGED, e ->{
+			graph.pan(e.getX()/-500,e.getY()/-500);
+		});
 		
 		stage.show();
 
 
 	}
-	public ArrayList<Curve> getLines(GraphicsContext g, DoubleBinaryOperator f, GraphFX graph){
+	public void drawLines(GraphicsContext g, DoubleBinaryOperator f, GraphFX graph){
 		int curveNum = (int)((YMAX-YMIN+1));
 		
 		List<ListenableFuture<Curve>> lineFutures = new ArrayList<ListenableFuture<Curve>>();
-		lines = new ArrayList<Curve>(curveNum); //for both positive x and negative x
-		//8192 is a prediction for the length, array can be extended later
+		lines = new ArrayList<Curve>(curveNum);
 		for(int i = 0; i < 2 * curveNum; i+=2){
 			final int index = i;
-			ListenableFuture<Curve> forwardTemp = parallelizer.submit(()->{
+			ListenableFuture<Curve> forwardTemp = Util.compute.submit(()->{
 				return computeOneWayLine(0, (index/2+YMIN)/2, STEP_LENGTH, f);
 			});
-			ListenableFuture<Curve> backTemp = parallelizer.submit(()->{
+			ListenableFuture<Curve> backTemp = Util.compute.submit(()->{
 				return computeOneWayLine(0, (index/2+YMIN)/2, -STEP_LENGTH, f);
 			});
-//			forwardTemp.addListener(()->{
-//				try {
-//					lines.add(forwardTemp.get());
-//				} catch (Exception e1) {};
-//			}, parallelizer);
-//			//when the line is computed, listener fires, then the lines array is updated
-//			backTemp.addListener(()->{
-//				try {
-//					lines.add(backTemp.get());
-//				} catch (Exception e1) {};
-//			}, parallelizer);
 			lineFutures.add(forwardTemp);
 			lineFutures.add(backTemp);
-//			lines.add(computeOneWayLine(0, (i/2+YMIN)/2, STEP_LENGTH, f));
-//			lines.add(computeOneWayLine(0, (i/2+YMIN)/2, -STEP_LENGTH, f));
 		}
 		ListenableFuture<List<Curve>> lineListFuture = Futures.allAsList(lineFutures);
 		lineListFuture.addListener(()->{
 			try {
-				lines = new ArrayList<Curve>(lineListFuture.get());
+				graph.setLines(new ArrayList<Curve>(lineListFuture.get()));
 			} catch (Exception e) {
 				throw new RuntimeException(); 
 			}
-			graph.setLines(lines);
-			graph.draw(g);
-		}, Platform::runLater);
-		return lines;
+			graph.draw();
+		},Platform::runLater);
+
 	}
 
 	public Curve computeOneWayLine(double startX, double startY, double stepLength, DoubleBinaryOperator f){
 		double[] x = new double[8192];
 		double[] y = new double[8192];
+		//8192 is a prediction for the length, array can be extended later
 		PointIterator p = Integration.IntegratorPath(f, startX, startY, stepLength);
 		int index = 0;
 		while(p.getX() <= XMAX && p.getX() >= XMIN){

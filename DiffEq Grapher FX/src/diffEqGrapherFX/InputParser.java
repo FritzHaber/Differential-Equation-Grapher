@@ -16,23 +16,19 @@ public class InputParser {
 	public static String parse(String natEq){
 		natEq = natEq.replaceAll("\\s",""); //removes whitespace
 		String temp = natEq;
-
+		
+		temp = temp.replace("atan2", "ATan"); //the 2 does bad things with the implicit multiplication parser, so this temporarily gets rid of it
 		temp = parseConstants(temp);
-		temp = parseTrig(temp);
 		temp = parseLogs(temp);
-		temp = parseAbs(temp);
+		temp = parseTrig(temp);
 		do{
 			natEq = temp;
 			temp = parseImplicitMultiplication(temp);
 			temp = parseExponents(temp);
 		}while(!natEq.equals(temp));
-
+		temp = temp.replace("ATan", "atan2"); //addes back atan2, a later static import of Math lets it be evaluated
+		
 		return temp;
-	}
-	
-	private static String parseAbs(String natEq) {
-		natEq = natEq.replace("abs(", "Math.abs(");
-		return natEq;
 	}
 
 	private static String parseLogs(String natEq) {
@@ -142,12 +138,15 @@ public class InputParser {
 	}
 
 	private static String parseTrig(String natEq) {
-		natEq = natEq.replace("arcsin(", "Math.asin(");
-		natEq = natEq.replace("arccos(", "Math.acos(");
-		natEq = natEq.replace("arctan(", "Math.atan(");
+		natEq = natEq.replace("arcsin(", "Math.aSin(");
+		natEq = natEq.replace("arccos(", "Math.aCos(");
+		natEq = natEq.replace("arctan(", "Math.aTan(");
 		natEq = natEq.replace("sin(", "Math.sin(");
 		natEq = natEq.replace("cos(", "Math.cos(");
 		natEq = natEq.replace("tan(", "Math.tan(");
+		natEq = natEq.replace("Math.aSin(", "Math.asin(");
+		natEq = natEq.replace("Math.aCos(", "Math.acos(");
+		natEq = natEq.replace("Math.aTan(", "Math.atan(");
 		return natEq;
 	}
 
@@ -207,12 +206,13 @@ public class InputParser {
 	//M cases for Math.sin etc, enables processing of trig and log functions
 	private static String stage2Parse(String natEq){
 		for(int i = 1; i < natEq.length(); i++){
-			if((isDigit(natEq.charAt(i-1)) || natEq.charAt(i-1) == 'M') && natEq.charAt(i) == '('){		//6(x) -> 6*(x)
+			if((isDigit(natEq.charAt(i-1)) || natEq.charAt(i-1) == 'M' || isVariable(natEq.charAt(i-1))) && natEq.charAt(i) == '('){		//6(x) -> 6*(x)
 				natEq = addMultiplicationSymbol(natEq, i);
 			}
-			if(natEq.charAt(i-1) == ')' && (isDigit(natEq.charAt(i)) || natEq.charAt(i) == 'M')){		//(x)6 -> (x)*6
+			if(natEq.charAt(i-1) == ')' && (isDigit(natEq.charAt(i)) || natEq.charAt(i) == 'M' || isVariable(natEq.charAt(i)))){		//(x)6 -> (x)*6
 				natEq = addMultiplicationSymbol(natEq, i);
 			}
+
 		}
 		//fixes a small bug in the above code where a trig function was multiplied by another parenthesis, like cos(x)*)
 		natEq = natEq.replace("(*(", "((");
