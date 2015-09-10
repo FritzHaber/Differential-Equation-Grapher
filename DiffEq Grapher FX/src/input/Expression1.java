@@ -4,6 +4,6 @@ public class Expression1 implements DoubleBinaryOperator
 {
 	public double applyAsDouble(double x, double y)
 	{
-		return Math.sin(x);
+		return x;
 	}
 }

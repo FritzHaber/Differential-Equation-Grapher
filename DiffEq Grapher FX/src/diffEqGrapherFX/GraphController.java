@@ -47,6 +47,7 @@ public class GraphController extends Application{
 	public final int BORDER_WIDTH = 25;
 	public final Color DEFAULT_COLOR = Color.RED;
 	public final Color USER_COLOR = Color.BLUE;
+	public final int DEFAULT_POINT_RES = 20;
 	
 //	static ListeningExecutorService compute = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
 	
@@ -83,7 +84,7 @@ public class GraphController extends Application{
 		//grid.setBorder(null);
 		
 
-		GraphFX graph = new GraphFX(0,0,lines,DEFAULT_COLOR,g);
+		GraphFX graph = new GraphFX(0,0,lines,g);
 		drawLines(g, f, graph);
 		
 		
@@ -153,12 +154,12 @@ public class GraphController extends Application{
 			Button add = new Button("Add");
 			add.setOnAction(d ->{
 				addLinePrompt.close();
-				Curve c1 = computeOneWayLine(Double.parseDouble(xField.getText()), Double.parseDouble(yField.getText()), STEP_LENGTH, f);
-				Curve c2 = computeOneWayLine(Double.parseDouble(xField.getText()), Double.parseDouble(yField.getText()), -STEP_LENGTH, f);
+				Curve c1 = computeOneWayLine(Double.parseDouble(xField.getText()), Double.parseDouble(yField.getText()), STEP_LENGTH, f, USER_COLOR, DEFAULT_POINT_RES);
+				Curve c2 = computeOneWayLine(Double.parseDouble(xField.getText()), Double.parseDouble(yField.getText()), -STEP_LENGTH, f, USER_COLOR, DEFAULT_POINT_RES);
 				graph.addCurve(c1);
 				graph.addCurve(c2);
-				graph.drawLine(c1, USER_COLOR);
-				graph.drawLine(c2, USER_COLOR);
+				graph.drawLine(c1);
+				graph.drawLine(c2);
 				});
 			
 			
@@ -212,10 +213,10 @@ public class GraphController extends Application{
 		for(int i = 0; i < 2 * curveNum; i+=2){
 			final int index = i;
 			ListenableFuture<Curve> forwardTemp = Util.compute.submit(()->{
-				return computeOneWayLine(0, (index/2+YMIN)/2, STEP_LENGTH, f);
+				return computeOneWayLine(0, (index/2+YMIN)/2, STEP_LENGTH, f, DEFAULT_COLOR, DEFAULT_POINT_RES);
 			});
 			ListenableFuture<Curve> backTemp = Util.compute.submit(()->{
-				return computeOneWayLine(0, (index/2+YMIN)/2, -STEP_LENGTH, f);
+				return computeOneWayLine(0, (index/2+YMIN)/2, -STEP_LENGTH, f, DEFAULT_COLOR, DEFAULT_POINT_RES);
 			});
 			lineFutures.add(forwardTemp);
 			lineFutures.add(backTemp);
@@ -232,7 +233,7 @@ public class GraphController extends Application{
 
 	}
 
-	public Curve computeOneWayLine(double startX, double startY, double stepLength, DoubleBinaryOperator f){
+	public Curve computeOneWayLine(double startX, double startY, double stepLength, DoubleBinaryOperator f, Color c, int resolution){
 		double[] x = new double[8192];
 		double[] y = new double[8192];
 		//8192 is a prediction for the length, array can be extended later
@@ -251,7 +252,7 @@ public class GraphController extends Application{
 		}
 		x = Arrays.copyOf(x, index);
 		y = Arrays.copyOf(y, index);
-		return new Curve(x,y);
+		return new Curve(x,y, c, resolution);
 	}
 	
 	
